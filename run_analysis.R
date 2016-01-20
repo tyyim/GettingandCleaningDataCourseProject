@@ -15,19 +15,25 @@ Subject<-rbind(TrainSub,TestSub)
 
 ## reading in index file
 feature_list<-read.table("features.txt",header = FALSE)
-activity_lables<-read.table("activity_labels.txt",header = FALSE)
+activity_labels<-read.table("activity_labels.txt",header = FALSE)
 
 ## using features.txt to lable the variables
-colnames(Feature)<-feature_list[,2]
+clean_list<-sapply(feature_list$V2,y<-function(x) { gsub("\\()|-|,","",x)})
+colnames(Feature)<-clean_list
 
 ## de-duplicated column
 Feature<-Feature[!duplicated(colnames(Feature))] %>%
 select(matches("mean|std"))
 
 ## merging the activity
-Train_activity<-join(Y,activity_lables,type="inner")
+Train_activity<-inner_join(Y,activity_labels)
 Full<-cbind(Subject,Train_activity$V2,Feature)
+## Rename the 1st twwo variables
 colnames(Full)[1]<-"Subject"
 colnames(Full)[2]<-"ActivityPerformed"
+## group By
 By_Act_Sub<-group_by(Full,ActivityPerformed,Subject)
+## Getting Mean
 SummarySet<-summarize_each(By_Act_Sub,funs(mean))
+## Writing the output
+write.table(SummarySet,"TidySet.txt",row.names = FALSE)
